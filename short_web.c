@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <dirent.h>
-#include <time.h>
 
 #include <sys/stat.h>//for mkdir
 
@@ -15,6 +14,9 @@
 #define FALSE (!TRUE)
 #define SELL_ITEM 1
 #define PARAGRAPH_ITEM 2
+
+//file
+#define ITEM_FILE_DELIMITER "|"
 
 //css variables
 #define BODY_FONT_SIZE 16
@@ -61,7 +63,6 @@ void print_dir_files(char);
 int get_filename_by_index(char *, int, char, int);
 int get_max_nr_of_img(struct Content *, int);
 int make_directory_linux(char *);
-void set_string_name(char **, char *);
 //void set_string_name_array(char *, char *);
 void save_html_file(struct Content *, int, char *);
 char * dialogue_enter_text(int);
@@ -74,9 +75,10 @@ int open_items_file(struct Content **, int *, char *);
 int main (void)
 {
 	//TODO: kunna spara och öppna projekt
-	int number;
+	int number, choice_=0;
 	char val;
 	char c;
+	char input_buffer_100[100];
 	struct Content * content;
 	//struct Content ** test_c;//for swapping pointer
 	struct Content temp_content;
@@ -218,6 +220,15 @@ int main (void)
 			break;
 			case 7://open
 			print_dir_files(0);
+			/*printf("Skriv en siffra, välj fil: ");
+			scanf(" %d", &choice_);
+			printf("Du valde: %d\n", choice_);
+			if(get_filename_by_index(input_buffer_100,choice_,0,sizeof(input_buffer_100))){
+				printf("Gick med %s\n", input_buffer_100);
+			}
+			else{
+				printf("Gick inte med %s\n", input_buffer_100);
+			}*/ //fungerade inte att få in filnamn i input_buffer_100
 			printf("Skriv in filnamnet på filen: ");
 			open_file_name = dialogue_enter_text(max_filename_length);
 			printf("Ska öppna fil '%s'\n", open_file_name);
@@ -258,6 +269,9 @@ int main (void)
 		
 		if(project_name != NULL){
 			free(project_name);
+		}
+		if(open_file_name != NULL){
+			free(open_file_name);
 		}
 	}
 	return 0;
@@ -561,6 +575,7 @@ void print_dir_files(char only_images){//1==yes 0==nej
 }
 
 int get_filename_by_index(char *filename, int index, char only_images, int buffer_size){//1-based index
+	printf("I get_filename_by_index med filename %s, index %d, only_images %d, buffer_size %d\n", filename, index, only_images, buffer_size);
 	if(!filename || buffer_size<1)
 		return FALSE;
 		
@@ -632,7 +647,8 @@ int make_directory_linux(char * name){
 	//<sys/stat.h>
 	
 	//TODO: kolla om name har space i.s.f. kör get_string_with_char_replaced med name
-	name = get_string_with_char_replaced(name, ' ', "\ ");
+	char * search_string = "\ ";
+	name = get_string_with_char_replaced(name, ' ', search_string);
 	
 	return mkdir(name, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 }
@@ -716,23 +732,7 @@ int move_used_images(struct Content * content, int number_of_content, char * des
 	return 1;
 }
 
-//tar string ref som en oallokerad * char
-void set_string_name(char ** name, char * new_name){
-	if(new_name == NULL){
-	time_t t = time(NULL);
-	struct tm tm = *localtime(&t);
-	
-	*name=NULL;
-	
-	*name = malloc(25);//project_2018_02_03_11_45
-	
-	sprintf(*name, "project_%d_%d_%d_%d_%d_%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-	}
-	else{
-		*name = malloc(strlen(new_name));
-		strcpy(*name, new_name);
-	}
-}
+
 
 //tar string ref
 /*
@@ -1136,70 +1136,109 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 	//Skriver över öppen data
 	FILE *fp = fopen(filename, "r");
 	char * line = NULL;
+	char * line_pointer = NULL;//ska peka på line
 	char c;
     size_t len = 0;
     ssize_t read;
     int counter=0;
-    char temp[100];
+    //char temp_txt[100];
 	
 	if(fp==NULL){
 		printf("Fel vid fopen\n");
 		return 0;
 	}
 	//för varje rad (text)
-	    while ((read = getline(&line, &len, fp)) != -1) {
-        printf("Retrieved line of length %zu :\n", read);
-        printf("%s", line);
-        
-		////kolla om det är S-I först eller P-I (eller ev. annat)
-	    if(line[0]=='S' || line[0]=='P'){
+	while ((read = getline(&line, &len, fp)) != -1) {
+		printf("Retrieved line of length %zu :\n", read);
+		printf("%s", line);
+		
+		line_pointer = line;
+		printf("line_pointer har tilldelats: %s\n", line_pointer);
+		
+		////kolla om det är S-I först eller P-I (eller ev. annat) samt ':' på index 3
+		if((line[0]=='S' || line[0]=='P') && line[1]=='-'){
 			printf("Hittade en lovande bokstav på rad %d\n", counter);
-			if(line[1]=='-'){
+			if(line[3]==':'){
+				printf("Och kolon\n");
 				if(line[2]=='I'){
 					////om något av detta: skapa temp content
-					printf("En item\n");
+					printf("En item!?\n");
+					line_pointer+=4; //hoppa fram läshuvud
 					struct Content temp;
-					char * pointers[2];
+					//char * pointer1;
+					//char * pointer2;
 					//TODO: hitta varför warning: assignment from incompatible pointer type
-					pointers[0] = &temp.c_item.s_item.title;
-					pointers[1] = &temp.c_item.s_item.description;
+					//pointer1 = temp.c_item.s_item.title;
+					//printf("Tilldelade till pointer1\n");
+					//pointer2 = &temp.c_item.s_item.description;
+					//printf("Tilldelade till pointer2\n");
 					if(line[0]=='S'){
+						
+						printf("Sell item!?\n");
 						temp.type = SELL_ITEM;
+						printf("temp.type = %d\n", temp.type);
 						//title|description|price(|image_name1;img2;img3)
 						int i=0;
+						printf("i=%d\n",i);
 						int title_length=0;
+						printf("title_length=%d\n",title_length);
 						int descr_length=0;
+						printf("descr_length=%d\n",descr_length);
 						char * temp_text;
-						while((c = line[i+4]) != '|' && line[i+4] != '\0'){
-							/*
-							if(i==0){
-								temp_text=malloc(1);
-								temp_text[0]=line[4];
-							}
-							else{
-								temp_text=realloc(temp_text,i+1);
-								temp_text[i]=line[i+4];
-							}*/
-							//TODO: direkt-tilldelning istället
-							strncat(pointers[0], line[i+4], 1);
-							
+						printf("temp_text\n");
+						//printf("Ska kolla line[i+4] %c, %c (%c)\n", line[i+4], c, *line_pointer);
+						while(*line_pointer != '|' && *line_pointer != '\n'){
+							temp.c_item.s_item.title[i] = *line_pointer;
 							i++;
+							line_pointer++;
 						}
+						temp.c_item.s_item.title[i]='\0';
+						printf("temp.c_item.s_item.title %s\n", temp.c_item.s_item.title);
 						//temp_text=realloc(temp_text,i+1);
 						//temp_text[i]='\0';
 						
 						title_length=i;
-						i++;//jump over |
+						printf("title_length %d\n", title_length);
 						i=0;
-						while((c = line[i+4+title_length]) != '|' && c != '\0'){
-							//TODO: byt till direkt-tilldelning
-							strncat(pointers[1], line[i+4+title_length], 1);
-							i++;
+						
+						if(*line_pointer=='|'){
+							line_pointer++;
+
 						}
+						else{
+							//ingen mer data på raden
+							//slut på fil?
+						}
+						//TODO: kontrollera fel vid kopiering av description
+						memset(temp.c_item.s_item.description, 'a', strlen(temp.c_item.s_item.description)); 
+
+						printf("Ska börja med tecken %c till %s\n", *line_pointer, temp.c_item.s_item.description);
+						while((c = *line_pointer) != '|' && c != '\0'){
+							temp.c_item.s_item.description[i] = c;
+							i++;
+							line_pointer++;
+						}
+						temp.c_item.s_item.description[i] = '\0';
+						printf("temp.c_item.s_item.description %s\n", temp.c_item.s_item.description);
+						printf("\n");
 						descr_length = i;
 						i=0;
+						
+						if(*line_pointer=='|'){
+							line_pointer++;
+
+						}
+						else{
+							//ingen mer data på raden
+							//slut på fil?
+						}
+						
+						
+						//pris
+						
 						//int strtol(*str, **str_end, 10)
-						while((c = line[i+4+title_length+descr_length]) != '|' && c!= '\0'){
+						
+						while((c = *line_pointer) != '|' && c!= '\0'){
 							//läs pris
 							if(i==0){
 								temp_text = malloc(1);
@@ -1207,11 +1246,16 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 							else{
 								temp_text = realloc(temp_text, i+1);
 							}
-							strncat(temp_text, line[i+4+title_length+descr_length], 1);
+							temp_text[i] = c;	
 							i++;
+							line_pointer++;
 						}
+						
+						temp_text[i] = '\0';
+						
+						printf("copied\n");
 						char *eptr;
-						temp.c_item.s_item.price = strtol(temp_text,&eptr,10);
+						temp.c_item.s_item.price = (int) strtol(temp_text, &eptr, 10);
 						if(temp.c_item.s_item.price ==0){
 							//if (errno == EINVAL)
 							//{
@@ -1223,15 +1267,44 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 							//printf("The value provided was out of range\n");
 						}
 						
+						printf("String %s konverterades till %d", eptr, temp.c_item.s_item.price);
+						printf("Har hittills:\n"); 
+						print_1_content(temp);
+						
 						//bildfiler?
 					}
 					else{
 						temp.type = PARAGRAPH_ITEM;
+						temp.c_item.p_item.text = calloc(strlen(line)-4,1);
+						print_1_content(temp);
+						printf("p-len: %ld\n", strlen(line));
+						printf("Har första tecken: %c, %c\n", *line_pointer, line[0]);
+						int i=0;
+						
+						while(*line_pointer != '\0' && *line_pointer != '\n'){
+							temp.c_item.p_item.text[i] = *line_pointer;
+							printf("%c\t", *line_pointer);
+							i++;
+							line_pointer++;
+						};
+						
+						printf("PARAGRAPH_ITEM typ\n");
+						print_1_content(temp);
 					}
+					
+					//TODO: spara detta content (expand)
+					/*increase(&content, &content_count);
+					 * content[content_count-1] = temp_content;
+					 * */
+				}
+				else{
+					//not sell/paragraph item
 				}
 			}        
 		}
 		
+		//skapa en string som visar vilken cotent type det är
+		/*
 		strncat(temp, line, 3);
 		strcat(temp, "\0");
 		if(strcmp(temp, "S-I")==0){
@@ -1243,11 +1316,12 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 		else{
 			printf("Jämförelse hittade inget\n");
 		}
-		
+		* */
+		//TODO: kontrollera detta, ska det inte vara vilkor först
 		counter++;
 		////stega upp number_of_content
-		(*number_of_content)++;
-    }
+		//(*number_of_content)++;
+    }//slut while rad
 
     fclose(fp);
     if (line){
