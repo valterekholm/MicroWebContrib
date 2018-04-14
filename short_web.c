@@ -1237,7 +1237,7 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 						//pris
 						
 						//int strtol(*str, **str_end, 10)
-						
+						//kopierar pris till temp_text
 						while((c = *line_pointer) != '|' && c!= '\0'){
 							//läs pris
 							if(i==0){
@@ -1249,11 +1249,12 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 							temp_text[i] = c;	
 							i++;
 							line_pointer++;
-						}
-						
+						}						
 						temp_text[i] = '\0';
 						
 						printf("copied\n");
+						
+						//konverterar text med siffror till integer 
 						char *eptr;
 						temp.c_item.s_item.price = (int) strtol(temp_text, &eptr, 10);
 						if(temp.c_item.s_item.price ==0){
@@ -1272,6 +1273,24 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 						print_1_content(temp);
 						
 						//bildfiler?
+						char read_img_counter=0;
+						if(*line_pointer == '|'){
+							//finns mer info om content, bilder(?)
+							
+							line_pointer++; //hoppa över '|'
+							
+							while(*line_pointer != '\n'){
+								printf("Ska kolla en eventuell bild, nr %d\n", read_img_counter);
+								while(*line_pointer != '|' && *line_pointer != '\n'){
+									c = *line_pointer;
+									printf("%c", c);
+									line_pointer++;								}
+								read_img_counter++;
+							}
+							
+							
+							
+						}
 					}
 					else{
 						temp.type = PARAGRAPH_ITEM;
