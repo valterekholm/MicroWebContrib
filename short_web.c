@@ -1269,28 +1269,35 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 						}
 						
 						printf("String %s konverterades till %d", eptr, temp.c_item.s_item.price);
-						printf("Har hittills:\n"); 
-						print_1_content(temp);
+
 						
 						//bildfiler?
 						char read_img_counter=0;
 						if(*line_pointer == '|'){
-							//finns mer info om content, bilder(?)
+							//finns mer info, 1 eller flera bilder(?)
 							
 							line_pointer++; //hoppa över '|'
 							
+							//bild-fil-namn avskiljs med ';', raden avslutas utan speciellt tecken 
 							while(*line_pointer != '\n'){
 								printf("Ska kolla en eventuell bild, nr %d\n", read_img_counter);
-								while(*line_pointer != '|' && *line_pointer != '\n'){
+								while(*line_pointer != ';' && *line_pointer != '\n'){//ett bildnamn
 									c = *line_pointer;
 									printf("%c", c);
-									line_pointer++;								}
+									line_pointer++;
+									}
+								if(*line_pointer==';'){//en bild ska följas upp...
+									line_pointer++;
+								}
+								else{
+									//helt slut på raden, \n
+								}
 								read_img_counter++;
 							}
-							
-							
-							
+							temp.c_item.s_item.nr_of_img = read_img_counter;
+							printf("\n");//läst alla bilder
 						}
+						printf("Antal bilder räknade och sparade till %d...\n", temp.c_item.s_item.nr_of_img);
 					}
 					else{
 						temp.type = PARAGRAPH_ITEM;
