@@ -1134,6 +1134,7 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 	printf("open_items_file\n");
 	//öppna filen filename
 	//Skriver över öppen data
+	//TODO: byt ut v-namn temp till temp_content_item
 	FILE *fp = fopen(filename, "r");
 	char * line = NULL;
 	char * line_pointer = NULL;//ska peka på line
@@ -1268,7 +1269,7 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 							//printf("The value provided was out of range\n");
 						}
 						
-						printf("String %s konverterades till %d", eptr, temp.c_item.s_item.price);
+						printf("String %s konverterades till %d\n", eptr, temp.c_item.s_item.price);
 
 						
 						//bildfiler?
@@ -1280,18 +1281,49 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 							
 							//bild-fil-namn avskiljs med ';', raden avslutas utan speciellt tecken 
 							while(*line_pointer != '\n'){
+								i=0;
 								printf("Ska kolla en eventuell bild, nr %d\n", read_img_counter);
 								while(*line_pointer != ';' && *line_pointer != '\n'){//ett bildnamn
 									c = *line_pointer;
 									printf("%c", c);
+									
+									
+									if(i==0){//TODO: kolla hur å ä ö lagras, hur mkt plats som behövs, definiera konstant
+										temp_text = malloc(2);
+									}
+									else if(i>0){
+										temp_text = realloc(temp_text, i+2);//lägger till en extra för '\0'
+									}
+									
+									temp_text[i] = c;
+									
+									
 									line_pointer++;
+									i++;
 									}
 								if(*line_pointer==';'){//en bild ska följas upp...
-									line_pointer++;
+									line_pointer++;//hoppa över ';'
 								}
 								else{
 									//helt slut på raden, \n
 								}
+								temp_text[i]='\0';
+								//allokera en char-array f bildnamn
+								
+								if(read_img_counter==0){
+									temp.c_item.s_item.image_files = malloc(sizeof(char**));
+								}
+								else if(read_img_counter>0){
+									temp.c_item.s_item.image_files = realloc(temp.c_item.s_item.image_files, (sizeof(char**)) * (read_img_counter+1));
+								}
+								
+								temp.c_item.s_item.image_files[read_img_counter] = malloc(i+1);
+								
+								//kopiera inläst string till struct
+								strcpy(temp.c_item.s_item.image_files[read_img_counter], temp_text);
+								printf("\n");
+								printf("Har värde '%s' i temp.c_item.s_item.image_files[%d]\n", temp.c_item.s_item.image_files[read_img_counter], read_img_counter);
+																
 								read_img_counter++;
 							}
 							temp.c_item.s_item.nr_of_img = read_img_counter;
@@ -1318,7 +1350,11 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 						print_1_content(temp);
 					}
 					
+					printf("Inget har laddats in...\n");
 					//TODO: spara detta content (expand)
+					
+					
+					
 					/*increase(&content, &content_count);
 					 * content[content_count-1] = temp_content;
 					 * */
