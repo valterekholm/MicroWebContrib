@@ -56,6 +56,7 @@ void print_1_content(struct Content);
 void print_all_content(struct Content *, int);
 //void add_one_content(struct Content**, int *);
 void increase(struct Content**, int *);
+void decrease(struct Content**, int *);
 //void set_type(struct Content *, int);
 //void set_1_content(struct Content *, struct Content);
 struct Content make_1_content();
@@ -71,6 +72,8 @@ void edit_view(struct Content *, int);
 int copy_file_linux(char *, char *, char);
 int move_used_images(struct Content *, int, char *, char);
 int open_items_file(struct Content **, int *, char *);
+int clear_last_content(struct Content **, int *);
+void free_1_item(struct Content *);
 
 int main (void)
 {
@@ -98,6 +101,12 @@ int main (void)
 	
 	//*test_c = &temp_content;
 	
+	//test tecken lista;
+	
+	for(int k=0;k<256;k++){
+		//printf("%d:%c\t", k, k);
+	}
+	
 	
 	
 	system("clear");//linux
@@ -115,7 +124,7 @@ int main (void)
 		printf("5: save full html set\n");
 		printf("6: View\n");
 		printf("7: Open\n");
-		printf("8: Clear workspace\n");
+		printf("8: Clear last item (nr %d av %d)\n", content_count,content_count);
 		printf("9: Exit\n");
 		
 		printf("\n");
@@ -179,9 +188,12 @@ int main (void)
 			break;
 			case 5:
 			//printf("Max antal bilder hos sell-items: %d\n", get_max_nr_of_img(content, content_count));
-			save_html_file(content, content_count, project_name);
+			if(content_count==0){
+				printf("Ursäkta, inget innehåll, avbryter...\n");
+				break;
+			}
 			
-			//TODO: om bildfiler använts; kopiera dem till (nya) mappen
+			save_html_file(content, content_count, project_name);
 			
 			printf("Kopiera bilder, och spara dem i rotmapp (y)? ");
 			scanf(" %c", &val);
@@ -237,7 +249,11 @@ int main (void)
 			break;
 			case 8:
 			//TODO: rensa all content i arbetsminnet
-			printf("Ej implementerat\n");
+			//printf("Ej implementerat\n");
+			//de-allocate
+			//decrease
+			decrease(&content, &content_count);
+			
 			break;
 		}
 		
@@ -247,7 +263,7 @@ int main (void)
 		printf("Ska fria minnne\n");
 		for(int i=0;i<content_count;i++){
 			printf("I content nummer %d\n", i);
-			if(content[i].type==1){
+			if(content[i].type==SELL_ITEM){
 				printf("%i är typ 1\n", i);
 				if(content[i].c_item.s_item.nr_of_img>0){
 					printf("Har bilder\n");
@@ -259,7 +275,7 @@ int main (void)
 					free(content[i].c_item.s_item.image_files);//thanks to ...
 				}
 			}
-			else if(content[i].type==2){
+			else if(content[i].type==PARAGRAPH_ITEM){
 				printf("%i är typ 2\n", i);
 				free(content[i].c_item.p_item.text);
 			}
@@ -410,6 +426,23 @@ void increase(struct Content** content, int *nr_of_content){ // den nya cellen b
 
 	(*nr_of_content)++;
 }
+
+//erase last item in array "content"
+void decrease(struct Content** content, int *nr_of_content){
+	printf("decrease\n");
+
+	if((*nr_of_content)==0){
+		printf("No Content\n");
+		return;
+	}
+	else{
+		free_1_item(content[(*nr_of_content)-1]);
+		*content = realloc(*content, (*nr_of_content-1) * sizeof(struct Content));
+	}
+	(*nr_of_content)--;
+}
+
+
 
 /*void set_type(struct Content * content, int type){
 	(*content).type = type;
@@ -1124,7 +1157,7 @@ void edit_view(struct Content * content, int nr_of_content){
 	} while(choice != 0);
 }
 
-void swap_content(struct Content ** c1, struct Content ** c2){
+void swap_content(struct Content ** c1, struct Content ** c2){//kan bara användas om content är pekare till pekare i implementering
 	struct Content * temp = *c1;
 	*c1 = *c2;
 	*c2 = temp; 
@@ -1162,22 +1195,22 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 			if(line[3]==':'){
 				printf("Och kolon\n");
 				if(line[2]=='I'){
-					////om något av detta: skapa temp content
+					////om något av detta: skapa temp_content_item content
 					printf("En item!?\n");
 					line_pointer+=4; //hoppa fram läshuvud
-					struct Content temp;
+					struct Content temp_content_item;
 					//char * pointer1;
 					//char * pointer2;
 					//TODO: hitta varför warning: assignment from incompatible pointer type
-					//pointer1 = temp.c_item.s_item.title;
+					//pointer1 = temp_content_item.c_item.s_item.title;
 					//printf("Tilldelade till pointer1\n");
-					//pointer2 = &temp.c_item.s_item.description;
+					//pointer2 = &temp_content_item.c_item.s_item.description;
 					//printf("Tilldelade till pointer2\n");
 					if(line[0]=='S'){
 						
 						printf("Sell item!?\n");
-						temp.type = SELL_ITEM;
-						printf("temp.type = %d\n", temp.type);
+						temp_content_item.type = SELL_ITEM;
+						printf("temp_content_item.type = %d\n", temp_content_item.type);
 						//title|description|price(|image_name1;img2;img3)
 						int i=0;
 						printf("i=%d\n",i);
@@ -1189,12 +1222,12 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 						printf("temp_text\n");
 						//printf("Ska kolla line[i+4] %c, %c (%c)\n", line[i+4], c, *line_pointer);
 						while(*line_pointer != '|' && *line_pointer != '\n'){
-							temp.c_item.s_item.title[i] = *line_pointer;
+							temp_content_item.c_item.s_item.title[i] = *line_pointer;
 							i++;
 							line_pointer++;
 						}
-						temp.c_item.s_item.title[i]='\0';
-						printf("temp.c_item.s_item.title %s\n", temp.c_item.s_item.title);
+						temp_content_item.c_item.s_item.title[i]='\0';
+						printf("temp_content_item.c_item.s_item.title %s\n", temp_content_item.c_item.s_item.title);
 						//temp_text=realloc(temp_text,i+1);
 						//temp_text[i]='\0';
 						
@@ -1211,16 +1244,16 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 							//slut på fil?
 						}
 						//TODO: kontrollera fel vid kopiering av description
-						memset(temp.c_item.s_item.description, 'a', strlen(temp.c_item.s_item.description)); 
+						memset(temp_content_item.c_item.s_item.description, 'a', strlen(temp_content_item.c_item.s_item.description)); 
 
-						printf("Ska börja med tecken %c till %s\n", *line_pointer, temp.c_item.s_item.description);
+						printf("Ska börja med tecken %c till %s\n", *line_pointer, temp_content_item.c_item.s_item.description);
 						while((c = *line_pointer) != '|' && c != '\0'){
-							temp.c_item.s_item.description[i] = c;
+							temp_content_item.c_item.s_item.description[i] = c;
 							i++;
 							line_pointer++;
 						}
-						temp.c_item.s_item.description[i] = '\0';
-						printf("temp.c_item.s_item.description %s\n", temp.c_item.s_item.description);
+						temp_content_item.c_item.s_item.description[i] = '\0';
+						printf("temp_content_item.c_item.s_item.description %s\n", temp_content_item.c_item.s_item.description);
 						printf("\n");
 						descr_length = i;
 						i=0;
@@ -1257,8 +1290,8 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 						
 						//konverterar text med siffror till integer 
 						char *eptr;
-						temp.c_item.s_item.price = (int) strtol(temp_text, &eptr, 10);
-						if(temp.c_item.s_item.price ==0){
+						temp_content_item.c_item.s_item.price = (int) strtol(temp_text, &eptr, 10);
+						if(temp_content_item.c_item.s_item.price ==0){
 							//if (errno == EINVAL)
 							//{
 							//	printf("Conversion error occurred: %d\n", errno);
@@ -1269,7 +1302,7 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 							//printf("The value provided was out of range\n");
 						}
 						
-						printf("String %s konverterades till %d\n", eptr, temp.c_item.s_item.price);
+						printf("String %s konverterades till %d\n", eptr, temp_content_item.c_item.s_item.price);
 
 						
 						//bildfiler?
@@ -1311,87 +1344,96 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 								//allokera en char-array f bildnamn
 								
 								if(read_img_counter==0){
-									temp.c_item.s_item.image_files = malloc(sizeof(char**));
+									temp_content_item.c_item.s_item.image_files = malloc(sizeof(char**));
 								}
 								else if(read_img_counter>0){
-									temp.c_item.s_item.image_files = realloc(temp.c_item.s_item.image_files, (sizeof(char**)) * (read_img_counter+1));
+									temp_content_item.c_item.s_item.image_files = realloc(temp_content_item.c_item.s_item.image_files, (sizeof(char**)) * (read_img_counter+1));
 								}
 								
-								temp.c_item.s_item.image_files[read_img_counter] = malloc(i+1);
+								temp_content_item.c_item.s_item.image_files[read_img_counter] = malloc(i+1);
 								
 								//kopiera inläst string till struct
-								strcpy(temp.c_item.s_item.image_files[read_img_counter], temp_text);
+								strcpy(temp_content_item.c_item.s_item.image_files[read_img_counter], temp_text);
 								printf("\n");
-								printf("Har värde '%s' i temp.c_item.s_item.image_files[%d]\n", temp.c_item.s_item.image_files[read_img_counter], read_img_counter);
+								printf("Har värde '%s' i temp_content_item.c_item.s_item.image_files[%d]\n", temp_content_item.c_item.s_item.image_files[read_img_counter], read_img_counter);
 																
 								read_img_counter++;
 							}
-							temp.c_item.s_item.nr_of_img = read_img_counter;
+							temp_content_item.c_item.s_item.nr_of_img = read_img_counter;
 							printf("\n");//läst alla bilder
 						}
-						printf("Antal bilder räknade och sparade till %d...\n", temp.c_item.s_item.nr_of_img);
+						printf("Antal bilder räknade och sparade till %d...\n", temp_content_item.c_item.s_item.nr_of_img);
+						print_1_content(temp_content_item);
 					}
 					else{
-						temp.type = PARAGRAPH_ITEM;
-						temp.c_item.p_item.text = calloc(strlen(line)-4,1);
-						print_1_content(temp);
+						temp_content_item.type = PARAGRAPH_ITEM;
+						temp_content_item.c_item.p_item.text = calloc(strlen(line)-4,1);
+						print_1_content(temp_content_item);
 						printf("p-len: %ld\n", strlen(line));
 						printf("Har första tecken: %c, %c\n", *line_pointer, line[0]);
 						int i=0;
 						
 						while(*line_pointer != '\0' && *line_pointer != '\n'){
-							temp.c_item.p_item.text[i] = *line_pointer;
-							printf("%c\t", *line_pointer);
+							temp_content_item.c_item.p_item.text[i] = *line_pointer;
+							//printf("%c(%d)\t", *line_pointer, *line_pointer);
 							i++;
 							line_pointer++;
 						};
-						
 						printf("PARAGRAPH_ITEM typ\n");
-						print_1_content(temp);
+						print_1_content(temp_content_item);
 					}
 					
-					printf("Inget har laddats in...\n");
+					//printf("Inget har laddats in...\n");
 					//TODO: spara detta content (expand)
 					
+					increase(content, number_of_content);
+					*content[(*number_of_content)-1] = temp_content_item;
+					//free
 					
-					
-					/*increase(&content, &content_count);
-					 * content[content_count-1] = temp_content;
-					 * */
+					//printf("Senast inladdade content:\n");
+					//print_1_content();
+
+					free_1_item(&temp_content_item);
+					*number_of_content++;
 				}
 				else{
 					//not sell/paragraph item
 				}
-			}        
-		}
+			}//if
+		}//if
 		
-		//skapa en string som visar vilken cotent type det är
-		/*
-		strncat(temp, line, 3);
-		strcat(temp, "\0");
-		if(strcmp(temp, "S-I")==0){
-			printf("Hittade en Sell-item\n");
-		}
-		else if(strcmp(temp, "P-I")==0){
-			printf("Hittade en Paragraph-item\n");
-		}
-		else{
-			printf("Jämförelse hittade inget\n");
-		}
-		* */
-		//TODO: kontrollera detta, ska det inte vara vilkor först
 		counter++;
 		////stega upp number_of_content
-		//(*number_of_content)++;
-    }//slut while rad
+    }//while
 
     fclose(fp);
     if (line){
 		free(line);
 	}
-	////om S-I; sätt type i, läs in och fyll in i temp, | är mellan fields, ';' är mellan bildfilsnamn
-	////om P-I; sätt type i, läs in i temp - det enda fieldet "text"
-	////kör expand på content och kopiera in temp
+	////om S-I; sätt type i, läs in och fyll in i temp_content_item, | är mellan fields, ';' är mellan bildfilsnamn
+	////om P-I; sätt type i, läs in i temp_content_item - det enda fieldet "text"
+	////kör expand på content och kopiera in temp_content_item
 
 	//Ladda in i programmet
+}
+
+int clear_last_content(struct Content ** content, int * number_of_content){
+	printf("Ej implem\n");	
+}
+
+/*
+ * Free any allocated memory made for one item, but does not delete the item
+ * */
+void free_1_item(struct Content * item){
+	if(item->type==SELL_ITEM){
+		//bildfiler
+		if(item->c_item.s_item.nr_of_img > 0){
+			for(int i=0; i<item->c_item.s_item.nr_of_img; i++){
+				free(item->c_item.s_item.image_files[i]);
+			}
+		}
+	}
+	else if(item->type==PARAGRAPH_ITEM){
+		free(item->c_item.p_item.text);
+	}	
 }
