@@ -74,7 +74,7 @@ int move_used_images(struct Content *, int, char *, char);
 int open_items_file(struct Content **, int *, char *);
 void clear_last_content(struct Content **, int *);
 int free_1_item(struct Content *);
-struct Content import_1_content(char * textLine);
+struct Content import_1_content(char *);
 
 int main (void)
 {
@@ -1209,213 +1209,16 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 					////om något av detta: skapa temp_content_item content
 					//printf("En item!?\n");
 					line_pointer+=4; //hoppa fram läshuvud
-					struct Content temp_content_item;
-					//temp_content_item2 = read_1_item(line);
-					
-					printf("Har ny content-struct:\n");
-					print_1_content(temp_content_item);
-					if(line[0]=='S'){
-						
-						//printf("Sell item!?\n");
-						temp_content_item.type = SELL_ITEM;
-						temp_content_item.c_item.s_item.nr_of_img=0;//utgår från 0 bilder, kanske finns sen
-						printf("temp_content_item.type = %d\n", temp_content_item.type);
-						//title|description|price(|image_name1;img2;img3)
-						int i=0;
-						int title_length=0;
-						int descr_length=0;
-						//printf("descr_length=%d\n",descr_length);
-						char * temp_text;//mellanlagring av inlästa text-bitar
-						//printf("temp_text\n");
-						//printf("Ska kolla line[i+4] %c, %c (%c)\n", line[i+4], c, *line_pointer);
-						
-						//Läser in title
-						//printf("Sizeof title = %ld\n", sizeof(temp_content_item.c_item.s_item.title));
-						while(*line_pointer != '|' && *line_pointer != '\n' && i < sizeof(temp_content_item.c_item.s_item.title)-1){
-							temp_content_item.c_item.s_item.title[i] = *line_pointer;//title har fast storlek
-							i++;//målindex
-							line_pointer++;
-						}
-						temp_content_item.c_item.s_item.title[i]='\0';
-						printf("temp_content_item.c_item.s_item.title %s\n", temp_content_item.c_item.s_item.title);
-						
-						title_length=i;
-						printf("title_length %d\n", title_length);
-						i=0;
-						
-						if(*line_pointer=='|'){
-							line_pointer++;
-
-						}
-						else{
-							//ingen mer data på raden
-							//slut på fil?
-						}
-						//TODO: kontrollera fel vid kopiering av description
-						memset(temp_content_item.c_item.s_item.description, 'a', strlen(temp_content_item.c_item.s_item.description)); 
-
-						//printf("Ska börja med tecken %c till %s\n", *line_pointer, temp_content_item.c_item.s_item.description);
-						
-						//Läser in description
-						while((c = *line_pointer) != '|' && c != '\0' && i < sizeof(temp_content_item.c_item.s_item.description)-1){
-							temp_content_item.c_item.s_item.description[i] = c;
-							i++;//målindex
-							line_pointer++;
-						}
-						temp_content_item.c_item.s_item.description[i] = '\0';
-						printf("temp_content_item.c_item.s_item.description %s\n", temp_content_item.c_item.s_item.description);
-						printf("\n");
-						descr_length = i;
-						i=0;
-						
-						if(*line_pointer=='|'){
-							line_pointer++;
-
-						}
-						else{
-							//ingen mer data på raden
-							//slut på fil?
-						}
-						
-						
-						
-						//int strtol(*str, **str_end, 10)
-						
-						//läser in pris
-						while((c = *line_pointer) != '|' && c!= '\0'){
-							//läs pris
-							if(i==0){
-								temp_text = malloc(1);
-							}
-							else{
-								temp_text = realloc(temp_text, i+1);
-							}
-							temp_text[i] = c;	
-							i++;
-							line_pointer++;
-						}						
-						temp_text[i] = '\0';
-						
-						//printf("copied\n");
-						
-						//konverterar pris text till integer 
-						char *eptr;
-						temp_content_item.c_item.s_item.price = (int) strtol(temp_text, &eptr, 10);
-						if(temp_content_item.c_item.s_item.price ==0){
-							//if (errno == EINVAL)
-							//{
-								//printf("Conversion error occurred: %d\n", errno);
-								//exit(0);	
-							//}
-							///* If the value provided was out of range, display a warning message */
-							//if (errno == ERANGE)
-							//printf("The value provided was out of range\n");
-						}
-						
-						printf("String för pris %s konverterades till talet %d\n", eptr, temp_content_item.c_item.s_item.price);
-
-						
-						//bildfiler?
-						short read_img_counter=0;
-						if(*line_pointer == '|'){
-							//finns mer info, 1 eller flera bilder(?)
-							
-							line_pointer++; //hoppa över '|'
-							
-							//bild-fil-namn avskiljs med ';', raden avslutas utan speciellt tecken ('\n')
-							while(*line_pointer != '\n'){//yttre bild-fils-loop
-								i=0;
-								printf("Ska kolla en eventuell bild, nr %d\n", read_img_counter);
-								while(*line_pointer != ';' && *line_pointer != '\n'){//stega igenom ett bildnamn
-									c = *line_pointer;
-									//printf("%c", c);
-									
-									if(i==0){//första bokstaven
-										temp_text = malloc(2);
-									}
-									else if(i>0){
-										temp_text = realloc(temp_text, i+2);//lägger till en extra för '\0'
-									}
-									
-									temp_text[i] = c;
-									
-									line_pointer++;
-									i++;
-									}//slut stega igenom ett bildnamn
-									
-								if(*line_pointer==';'){//en bild ska följas upp...
-									line_pointer++;//hoppa över ';'
-								}
-								else{
-									//helt slut på raden, \n
-								}
-								//avsluta string med \0
-								temp_text[i]='\0';
-								//allokera en char-array f bildnamn
-								
-								if(read_img_counter==0){//skapa array för strings (bildnamn)
-									printf("Ska allokera array (**) för första bildnamnet (%s) strl %ld...\n", temp_text, sizeof(char*));
-									temp_content_item.c_item.s_item.image_files = malloc(sizeof(char*));
-								}
-								else if(read_img_counter>0){//utöka array för strings (bildnamn)
-									printf("Ska om-allokera array (**) för bildnamn (%s) strl %ld ...\n", temp_text, (sizeof(char*)) * (read_img_counter+1));
-									temp_content_item.c_item.s_item.image_files = realloc(temp_content_item.c_item.s_item.image_files, (sizeof(char*)) * (read_img_counter+1));
-								}
-								
-								//TODO: blev fel när bara en bild fanns
-								
-								//allokera minne för ett bildnamn
-								printf("Ska allokera minne för ett bildnamn, strl %d\n", i+1);
-								temp_content_item.c_item.s_item.image_files[read_img_counter] = malloc(i+1);//todo: finn fel
-								
-								//kopiera inläst string till struct
-								printf("Ska kopiera bildnamnet (%s)\n", temp_text);
-								strncpy(temp_content_item.c_item.s_item.image_files[read_img_counter], temp_text, strlen(temp_text));
-								printf("\n");
-								//printf("Har värde '%s' i temp_content_item.c_item.s_item.image_files[%d]\n", temp_content_item.c_item.s_item.image_files[read_img_counter], read_img_counter);
-																
-								read_img_counter++;//en bild har lästs in
-								temp_content_item.c_item.s_item.nr_of_img = read_img_counter; //lagra antalet av bilderna
-							}//slut yttre bild-fils-loop
-							
-							printf("\n");//läst alla bilder
-							printf("Antal bilder räknade och sparade till %d...\n", temp_content_item.c_item.s_item.nr_of_img);
-						}
-						else{//inget info om bildfiler på raden
-							printf("Item hade inga bildfiler\n");
-							
-						}
-						
-						//print_1_content(temp_content_item);
-					}//slut if line[0]=='S' i scope där line[0] är 'S' eller 'P'
-					else{ // line[0]=='P'
-						temp_content_item.type = PARAGRAPH_ITEM;
-						temp_content_item.c_item.p_item.text = calloc(strlen(line)-4,1);
-						print_1_content(temp_content_item);
-						printf("p-len: %ld\n", strlen(line));
-						//printf("Har första tecken: %c, %c\n", *line_pointer, line[0]);
-						int i=0;
-						
-						while(*line_pointer != '\0' && *line_pointer != '\n'){
-							temp_content_item.c_item.p_item.text[i] = *line_pointer;
-							//printf("%c(%d)\t", *line_pointer, *line_pointer);
-							i++;
-							line_pointer++;
-						};
-
-					}//slut line[0]=='P'
-					
-					//TODO: spara detta content (increase)
-					
+					temp_content_item2 = import_1_content(line);
 					
 					increase(content, number_of_content);
-					*content[(*number_of_content)-1] = temp_content_item;
+					*content[(*number_of_content)-1] = temp_content_item2;
 					
 					printf("Senast inladdade content i content-array (plats %d):\n", (*number_of_content)-1);
 					print_1_content(*content[(*number_of_content)-1]);
 
-					free_1_item(&temp_content_item);
-					temp_content_item.type=0;
+					free_1_item(&temp_content_item2);
+					temp_content_item2.type=0;
 					
 					//printf("number_of_content (%d) ska ökas ett steg\n", *number_of_content);
 
@@ -1487,10 +1290,10 @@ void clear_1_item(struct Content * item){
  * Parses a line that represent an sell- or p-item
  * Returns a struct Content
  * */
- 
+
 struct Content import_1_content(char * text_line){
 	struct Content temp_content_item;
-	printf("import_1_content with textLine '%s'\n", text_line);
+	printf("import_1_content\n");
 	
 	char * line_pointer = text_line;
 	char c;
@@ -1521,8 +1324,8 @@ struct Content import_1_content(char * text_line){
 		temp_content_item.c_item.s_item.title[i]='\0';
 		printf("temp_content_item.c_item.s_item.title %s\n", temp_content_item.c_item.s_item.title);
 		
-		title_length=i;
-		printf("title_length %d\n", title_length);
+		//title_length=i;
+		//printf("title_length %d\n", title_length);
 		i=0;
 		
 		if(*line_pointer=='|'){
@@ -1636,11 +1439,11 @@ struct Content import_1_content(char * text_line){
 				//allokera en char-array f bildnamn
 				
 				if(read_img_counter==0){//skapa array för strings (bildnamn)
-					printf("Ska allokera array (**) för första bildnamnet (%s) strl %ld...\n", temp_text, sizeof(char*));
+					printf("Ska allokera array (**) för första bildnamnet (%s) till storlek %ld...\n", temp_text, sizeof(char*));
 					temp_content_item.c_item.s_item.image_files = malloc(sizeof(char*));
 				}
 				else if(read_img_counter>0){//utöka array för strings (bildnamn)
-					printf("Ska om-allokera array (**) för bildnamn (%s) strl %ld ...\n", temp_text, (sizeof(char*)) * (read_img_counter+1));
+					printf("Ska om-allokera array (**) för bildnamn (%s) till storlek %ld ...\n", temp_text, (sizeof(char*)) * (read_img_counter+1));
 					temp_content_item.c_item.s_item.image_files = realloc(temp_content_item.c_item.s_item.image_files, (sizeof(char*)) * (read_img_counter+1));
 				}
 				
