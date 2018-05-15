@@ -72,7 +72,6 @@ void edit_view(struct Content *, int);
 int copy_file_linux(char *, char *, char);
 int move_used_images(struct Content *, int, char *, char);
 int open_items_file(struct Content **, int *, char *);
-void clear_last_content(struct Content **, int *);
 int free_1_item(struct Content *);
 struct Content import_1_content(char *);
 
@@ -1180,8 +1179,8 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 	//TODO: byt ut v-namn temp till temp_content_item
 	FILE *fp = fopen(filename, "r");
 	char * line = NULL;
-	char * line_pointer = NULL;//ska peka på line
-	char c;
+	//char * line_pointer = NULL;//ska peka på line
+	//char c;
     size_t len = 0;
     ssize_t read;
     int counter=0;
@@ -1197,9 +1196,10 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 		printf("Retrieved line of length %zu :\n", read);
 		printf("%s", line);
 		
-		line_pointer = line;
+		//line_pointer = line;
 		//printf("line_pointer har tilldelats: %s\n", line_pointer);
-		
+		//Kolla att raden inleds med vissa tecken
+		//TODO: ersätt med 'general expression'
 		////kolla om det är S-I först eller P-I (eller ev. annat) samt ':' på index 3
 		if((line[0]=='S' || line[0]=='P') && line[1]=='-'){
 			//printf("Hittade en lovande bokstav på rad %d\n", counter);
@@ -1208,14 +1208,20 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 				if(line[2]=='I'){
 					////om något av detta: skapa temp_content_item content
 					//printf("En item!?\n");
-					line_pointer+=4; //hoppa fram läshuvud
-					temp_content_item2 = import_1_content(line);
+					//line_pointer+=4; //hoppa fram läshuvud
 					
+					printf("A\n");
 					increase(content, number_of_content);
-					*content[(*number_of_content)-1] = temp_content_item2;
+					printf("B\n");
+					
+					
+					
+					(*content)[(*number_of_content)-1] = import_1_content(line);
+					printf("C\n");
+					
 					
 					printf("Senast inladdade content i content-array (plats %d):\n", (*number_of_content)-1);
-					print_1_content(*content[(*number_of_content)-1]);
+					print_1_content((*content)[(*number_of_content)-1]);
 
 					free_1_item(&temp_content_item2);
 					temp_content_item2.type=0;
@@ -1230,16 +1236,18 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 		}//slut if line[0] =='S' eller 'P'
 		
 		counter++;
-		free(line);
+		
 		printf("\nCounter uppräknad: %d---\n\n", counter);
 		//free(line_pointer);
     }//slut while read = getline(&line, &len, fp)) != -1
     
+    free(line);
+    
     //har läst alla rader i filen
     fclose(fp);
-    if (line_pointer != NULL){
-		free(line_pointer);
-	}
+    //if (line_pointer != NULL){
+		//free(line_pointer);
+	//}
 	////om S-I; sätt type i, läs in och fyll in i temp_content_item, | är mellan fields, ';' är mellan bildfilsnamn
 	////om P-I; sätt type i, läs in i temp_content_item - det enda fältet "text"
 	////kör expand på content och kopiera in temp_content_item
@@ -1247,40 +1255,41 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 	return counter;
 }
 
-void clear_last_content(struct Content ** content, int * number_of_content){
-	printf("Ej implem\n");
-}
+//void clear_last_content(struct Content ** content, int * number_of_content){
+//	printf("Ej implem\n");
+//}
 
 /*
  * Free any allocated memory made for one item, but does not delete the item
  * */
-int free_1_item(struct Content * item){
-	printf("free_1_item, ");
-	//print_1_content(*item);
-	if(item->type==SELL_ITEM){
-		printf("sell_item\n");
-		//bildfiler
-		if(item->c_item.s_item.nr_of_img > 0){
-			printf("Freeing img-names");
-			for(int i=0; i<item->c_item.s_item.nr_of_img; i++){
-				printf(" .");
-				free(item->c_item.s_item.image_files[i]);
-			}
-			printf("\n");
-		}
-		return 1;
-	}
-	else if(item->type==PARAGRAPH_ITEM){
-		printf("p_item\n");
-		free(item->c_item.p_item.text);
-		return 1;
-	}
-	else{
-		printf("error: unknown item\n");
-	}
-	return 0;
-}
 
+    int free_1_item(struct Content * item){
+      if(item->type==SELL_ITEM){
+		printf("Freeing sell_item\n");
+        if(item->c_item.s_item.nr_of_img > 0){
+        //printf(", img-names");
+        for(int i=0; i<item->c_item.s_item.nr_of_img; i++){
+          if(item->c_item.s_item.image_files[i] != NULL){
+			  free(item->c_item.s_item.image_files[i]);
+			  printf(".");
+		  }
+          
+        }
+      printf("\n");
+      }
+    return 1;
+    }
+    else if(item->type==PARAGRAPH_ITEM){
+      printf("freeing p_item\n");
+      if(item->c_item.p_item.text != NULL)
+      free(item->c_item.p_item.text);
+      return 1;
+    }
+    else{
+      printf("error: unknown item\n");
+    }
+    return 0;
+    }
 void clear_1_item(struct Content * item){
 	//clearing all data... not impl
 	
@@ -1290,7 +1299,7 @@ void clear_1_item(struct Content * item){
  * Parses a line that represent an sell- or p-item
  * Returns a struct Content
  * */
-
+//TODO: fixa fel med datan som returneras, bildfilen kommer inte med vid tillfälle
 struct Content import_1_content(char * text_line){
 	struct Content temp_content_item;
 	printf("import_1_content\n");
@@ -1298,6 +1307,9 @@ struct Content import_1_content(char * text_line){
 	char * line_pointer = text_line;
 	char c;
 	//printf("line_pointer har tilldelats: %s\n", line_pointer);
+	
+	//test:
+	line_pointer+=4;
 	
 	if(text_line[0]=='S'){
 		
@@ -1442,22 +1454,24 @@ struct Content import_1_content(char * text_line){
 					printf("Ska allokera array (**) för första bildnamnet (%s) till storlek %ld...\n", temp_text, sizeof(char*));
 					temp_content_item.c_item.s_item.image_files = malloc(sizeof(char*));
 				}
-				else if(read_img_counter>0){//utöka array för strings (bildnamn)
+				else{//utöka array för strings (bildnamn)
 					printf("Ska om-allokera array (**) för bildnamn (%s) till storlek %ld ...\n", temp_text, (sizeof(char*)) * (read_img_counter+1));
-					temp_content_item.c_item.s_item.image_files = realloc(temp_content_item.c_item.s_item.image_files, (sizeof(char*)) * (read_img_counter+1));
+					temp_content_item.c_item.s_item.image_files = realloc(temp_content_item.c_item.s_item.image_files, sizeof(char*) * (read_img_counter+1));
 				}
 				
 				//TODO: blev fel när bara en bild fanns
 				
 				//allokera minne för ett bildnamn
 				printf("Ska allokera minne för ett bildnamn, strl %d\n", i+1);
-				temp_content_item.c_item.s_item.image_files[read_img_counter] = malloc(i+1);//todo: finn fel
+				temp_content_item.c_item.s_item.image_files[read_img_counter] = calloc(i+1, 1);//todo: finn fel
 				
 				//kopiera inläst string till struct
 				printf("Ska kopiera bildnamnet (%s)\n", temp_text);
 				strncpy(temp_content_item.c_item.s_item.image_files[read_img_counter], temp_text, strlen(temp_text));
 				printf("\n");
-				//printf("Har värde '%s' i temp_content_item.c_item.s_item.image_files[%d]\n", temp_content_item.c_item.s_item.image_files[read_img_counter], read_img_counter);
+				printf("Har värde '%s' i temp_content_item.c_item.s_item.image_files[%d]\n",
+					temp_content_item.c_item.s_item.image_files[read_img_counter],
+					read_img_counter);
 												
 				read_img_counter++;//en bild har lästs in
 				temp_content_item.c_item.s_item.nr_of_img = read_img_counter; //lagra antalet av bilderna
@@ -1468,9 +1482,9 @@ struct Content import_1_content(char * text_line){
 		}
 		else{//inget info om bildfiler på raden
 			printf("Item hade inga bildfiler\n");
-			
 		}
 		
+		printf("Slut på inläsning av SELL-ITEM-----\n\n");
 		//print_1_content(temp_content_item);
 	}//slut if text_line[0]=='S' i scope där text_line[0] är 'S' eller 'P'
 	else{ // text_line[0]=='P'
@@ -1487,7 +1501,11 @@ struct Content import_1_content(char * text_line){
 			i++;
 			line_pointer++;
 		};
-
+		printf("Slut på inläsning av PARAGRAPH-ITEM-----\n\n");
 	}//slut text_line[0]=='P'
+	
+	printf("Ska returnera:\n");
+	print_1_content(temp_content_item);
+	printf("P\n");
 	return temp_content_item;
 }
