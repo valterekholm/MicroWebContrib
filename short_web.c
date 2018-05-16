@@ -645,7 +645,7 @@ int get_filename_by_index(char *filename, int index, char only_images, int buffe
 }
 
 int get_max_nr_of_img(struct Content * content, int nr_of_content){
-	printf("get_max_nr_of_img\n");
+	printf("get_max_nr_of_img: ");
 	int max_nr_of_img = 0;
 	for(int i=0; i<nr_of_content; i++){
 		//printf("%d: ", i);
@@ -660,6 +660,7 @@ int get_max_nr_of_img(struct Content * content, int nr_of_content){
 		}
 		content++;//stegar upp pekaren		
 	}
+	printf("%d\n", max_nr_of_img);
 	return max_nr_of_img;
 }
 
@@ -694,9 +695,12 @@ int make_directory_windows(char * name){
 //filename - pointer to char-array for filename
 //destination - pointer to char-array for destination folder name
 //keep_originals - 1:yes 0:no
+//TODO: mv fungerade inte
 int copy_file_linux(char * filename, char * destination_folder, char keep_originals){
 	//TODO: add backslach before each space in names
 	char syscall[300];
+	
+	memset(syscall,0,300);
 	
 	//printf("Inne i copy_file_linux med filename '%s', destination_folder '%s' och keep_originals %d\n", filename, destination_folder, keep_originals);
 	
@@ -704,7 +708,9 @@ int copy_file_linux(char * filename, char * destination_folder, char keep_origin
 	
 	//printf("Har gjort om destination_folder till '%s'\n", destination_folder);
 	
+	//build a linux command
 	if(keep_originals==0){
+		printf("Not keep originals\n");
 		strncpy(syscall, "mv ", 3);
 		strcat(syscall, filename);
 		strcat(syscall, " ");
@@ -720,13 +726,16 @@ int copy_file_linux(char * filename, char * destination_folder, char keep_origin
 		return 1;
 	}
 	else if(keep_originals==1){
+		//-p 	Same as --preserve=mode,ownership,timestamps.
+		// cp origfile /directory/subdirectory
+		printf("Keep originals 1\n");
 		strncpy(syscall, "cp ", 3);
 		strcat(syscall, filename);
-		strcat(syscall, " ");
+		strcat(syscall, " "); //inte '/'
 		strcat(syscall, destination_folder);
-		strcat(syscall, "/");
-		strcat(syscall, filename);
-		//printf("Ska köra %s\n", syscall);
+		//strcat(syscall, "/");
+		//strcat(syscall, filename);
+		printf("Ska köra %s\n\n", syscall);
 		if(system(syscall)==-1){
 			printf("System call failed\n");
 		}
@@ -734,7 +743,7 @@ int copy_file_linux(char * filename, char * destination_folder, char keep_origin
 		}
 		return 2;
 	}
-	return 0;//todo: meaning
+	return 0;
 }
 
 //Starting moving all image files in content (note: ignores if multiple 'projects' uses same file)
@@ -746,6 +755,7 @@ int move_used_images(struct Content * content, int number_of_content, char * des
 	//TODO: låt användare välja om bilder ska flyttas eller kopieras
 	printf("move_used_images, till mapp %s\n", destination_folder);
 	char temp_name[100];
+	
 	if(get_max_nr_of_img(content, number_of_content)==0){
 		return 0;
 	}
@@ -757,9 +767,10 @@ int move_used_images(struct Content * content, int number_of_content, char * des
 			if((*content).c_item.s_item.nr_of_img > 0){
 				
 				for(int j=0; j<(*content).c_item.s_item.nr_of_img; j++){
+					memset(temp_name, 0, 100);//clear to zero
 					//bläddrar igenom bildnamn
 					strncpy(temp_name, (*content).c_item.s_item.image_files[j], strlen((*content).c_item.s_item.image_files[j]));
-					strcat(temp_name, "\0");//behövs detta?
+					//strcat(temp_name, "\0");//behövs detta?
 					//printf("Har namn '%s'\n", temp_name);
 					
 					copy_file_linux(temp_name, destination_folder, keep_originals);//linux
@@ -791,17 +802,17 @@ void set_string_name_array(char * name, char * new_name){
 }*/ //bortkommenterad 3 apr -18
 
 void save_html_file(struct Content * content, int nr_of_content, char * project_name){
-	printf("save_html_file\n");
+	printf("save_html_file %d, %s, %ld\n", nr_of_content, project_name, strlen(project_name));
 	int max_nr_of_img = get_max_nr_of_img(content, nr_of_content);//till css pseudoklasser
 	char * filename;
 	
 	FILE *f;
 	
-	filename = malloc(strlen(project_name)+12);//8-bit index.html\0
+	filename = calloc(strlen(project_name)+11, 1);//8-bit index.html\0
 	//fil(namn)
 	if(strlen(project_name) > 0){
 		strncpy(filename,project_name, strlen(project_name));
-		strcat(filename,"/index.html\0");
+		strcat(filename,"/index.html");
 		printf("Ska spara '%s'...\n", filename);
 		make_directory_linux(project_name);
 		f = fopen(filename, "w");
@@ -1207,13 +1218,8 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 				//printf("Och kolon\n");
 				if(line[2]=='I'){
 					////om något av detta: skapa temp_content_item content
-					//printf("En item!?\n");
-					//line_pointer+=4; //hoppa fram läshuvud
 					
-					printf("A\n");
 					increase(content, number_of_content);
-					printf("B\n");
-					
 					
 					
 					(*content)[(*number_of_content)-1] = import_1_content(line);
@@ -1223,8 +1229,8 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 					printf("Senast inladdade content i content-array (plats %d):\n", (*number_of_content)-1);
 					print_1_content((*content)[(*number_of_content)-1]);
 
-					free_1_item(&temp_content_item2);
-					temp_content_item2.type=0;
+					//free_1_item(&temp_content_item2);
+					//temp_content_item2.type=0;
 					
 					//printf("number_of_content (%d) ska ökas ett steg\n", *number_of_content);
 
@@ -1238,19 +1244,13 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 		counter++;
 		
 		printf("\nCounter uppräknad: %d---\n\n", counter);
-		//free(line_pointer);
     }//slut while read = getline(&line, &len, fp)) != -1
     
     free(line);
     
     //har läst alla rader i filen
     fclose(fp);
-    //if (line_pointer != NULL){
-		//free(line_pointer);
-	//}
-	////om S-I; sätt type i, läs in och fyll in i temp_content_item, | är mellan fields, ';' är mellan bildfilsnamn
-	////om P-I; sätt type i, läs in i temp_content_item - det enda fältet "text"
-	////kör expand på content och kopiera in temp_content_item
+
 
 	return counter;
 }
@@ -1290,6 +1290,7 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
     }
     return 0;
     }
+    
 void clear_1_item(struct Content * item){
 	//clearing all data... not impl
 	
@@ -1506,6 +1507,5 @@ struct Content import_1_content(char * text_line){
 	
 	printf("Ska returnera:\n");
 	print_1_content(temp_content_item);
-	printf("P\n");
 	return temp_content_item;
 }
