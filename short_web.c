@@ -3,15 +3,13 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <dirent.h>
-
+#include <stdbool.h>
 #include <sys/stat.h>//for mkdir
 
 #include "../a_v_e_string_f.h" //TODO: använd get_string_with_char_replaced för make_directory_linux (mkdir)
 
 //compile with gcc -o short_v short_v.c ../a_v_e_string_f.c
 
-#define TRUE  (1==1)
-#define FALSE (!TRUE)
 #define SELL_ITEM 1
 #define PARAGRAPH_ITEM 2
 
@@ -173,22 +171,6 @@ int main (void)
 			break;
 			case 4:
 			project_name = dialogue_enter_text(max_project_length);
-			
-			
-			/*
-			if(content!=NULL){
-				increase(&content, &content_count);
-				//set_type(&content[content_count], 1);
-				printf("Type: %d\n", content[content_count].type);
-				printf("Shall fill att position %d\n", content_count-1);
-				content[content_count-1].type = 1;
-				strncpy(content[content_count-1].c_item.s_item.title, "Test",4);
-				strncpy(content[content_count-1].c_item.s_item.description, "Beskrivning",11);
-				content[content_count-1].c_item.s_item.price = 100;
-				content[content_count-1].c_item.s_item.nr_of_img = 0;
-				print_1_content(content[content_count-1]);
-			}
-			*/
 			break;
 			case 5:
 			//printf("Max antal bilder hos sell-items: %d\n", get_max_nr_of_img(content, content_count));
@@ -215,27 +197,7 @@ int main (void)
 			}
 			break;
 			case 6:
-			/*
-			printf("View\n\n");
-			for(int i=0; i<content_count; i++){
-				printf("----  %d\n", i);
-				switch(content[i].type){
-				case 1:
-				printf("Sell-item (%s)\n", content[i].c_item.s_item.title);
-				break;
-				case 2:
-				printf("Paragraph-item (");
-				if(strlen(content[i].c_item.p_item.text)<=20) printf("%s\n", content[i].c_item.p_item.text);
-				else
-				for(int j=0;j<20;j++){
-					putchar(content[i].c_item.p_item.text[j]);
-				}
-				printf("...)\n");
-				break;	
-				}
-			}
-			printf("----\n");
-			*/
+
 			edit_view(content, content_count);
 			break;
 			case 7://open
@@ -256,8 +218,7 @@ int main (void)
 			open_items_file(&content, &content_count, open_file_name);
 			break;
 			case 8:
-			//TODO: rensa all content i arbetsminnet
-			//printf("Ej implementerat\n");
+			//TODO: rensa all content i arbetsminne
 			//de-allocate
 			//decrease
 			decrease(&content, &content_count);
@@ -433,35 +394,16 @@ void decrease(struct Content** content, int *nr_of_content){
 }
 
 
-
-/*void set_type(struct Content * content, int type){
-	(*content).type = type;
-}*/ //bort-kommenterad 3 apr -18	
-
-/*
-void set_1_content(struct Content *content, struct Content new_data){
-	if(new_data.type==1){
-		strncpy((*content).c_item.s_item.title,  new_data.c_item.s_item.title, strlen(new_data.c_item.s_item.title));
-		strncpy((*content).c_item.s_item.description,  new_data.c_item.s_item.description, strlen(new_data.c_item.s_item.description));
-		(*content).c_item.s_item.price = new_data.c_item.s_item.price;
-	}
-	else{
-		printf("Ej impl");
-	}
-}*/ //bort-kommenterad 3 apr -18
-
 //Offers menu to save a content
 struct Content make_1_content(){
 	struct Content new_content;
 	int count, max_size;
 	char c='0';
-	//size_t len =0;//för getline
-	//ssize_t read;//för getline
+
 	
 	//A loop that runs while new_content.type<1 && new_content.type>2
 	do{
 		printf("Ange typ: 1=sell_item, 2=paragraph ");
-		//TODO: felhantera
 		if (scanf("%d", &new_content.type) == 0) {//tar bort oönskade tecken
 			//fel med inläsning?
 			printf("Err. . .\n");
@@ -470,7 +412,6 @@ struct Content make_1_content(){
 			}
 			while (!isdigit(c));
 			ungetc(c, stdin);
-			//consume non-numeric chars from buffer
 		}
 		getchar();
 		switch(new_content.type){
@@ -512,7 +453,7 @@ struct Content make_1_content(){
 			int img_count=0;
 			do{
 				printf("Välj en bild, eller 0 för att gå vidare:\n");
-				print_dir_files(TRUE);
+				print_dir_files(true);
 				printf("val: ");
 				if(scanf(" %d", &img)==1){
 				}
@@ -530,7 +471,7 @@ struct Content make_1_content(){
 					else{
 						new_content.c_item.s_item.image_files = realloc(new_content.c_item.s_item.image_files, sizeof(char*) * (img_count+1));
 					}
-					//printf("Har hämtat filnamn %s\n", filename);
+
 					new_content.c_item.s_item.image_files[img_count] = malloc(sizeof(filename)+1);
 					strncpy(new_content.c_item.s_item.image_files[img_count], filename, sizeof(filename));
 					//printf("Har satt co.c_item.s_item.image_files[%d] till %s\n", img_count, co.c_item.s_item.image_files[img_count]);
@@ -549,10 +490,6 @@ struct Content make_1_content(){
 			//paragraf:
 			//getchar();
 			printf("Skriv din text: ");
-			/*while(read<2){//fungerar inte
-				read = getline(&new_content.c_item.p_item.text,&len,stdin);
-				new_content.c_item.p_item.text[strlen(new_content.c_item.p_item.text)-1] = '\0';
-			}*/
 			max_size = 1000;
 			new_content.c_item.p_item.text = malloc(max_size);
 			count=0;
@@ -606,9 +543,9 @@ void print_dir_files(char only_images){//1==yes 0==nej
 }
 
 int get_filename_by_index(char *filename, int index, char only_images, int buffer_size){//1-based index
-	printf("I get_filename_by_index med filename %s, index %d, only_images %d, buffer_size %d\n", filename, index, only_images, buffer_size);
+	//printf("I get_filename_by_index med filename %s, index %d, only_images %d, buffer_size %d\n", filename, index, only_images, buffer_size);
 	if(!filename || buffer_size<1)
-		return FALSE;
+		return false;
 		
 	DIR *d;
 	struct dirent *dir;
@@ -629,7 +566,7 @@ int get_filename_by_index(char *filename, int index, char only_images, int buffe
 					if(count == index){
 						strncpy(filename,dir->d_name,buffer_size);
 						closedir(d);
-						return TRUE;
+						return true;
 					}
 					count++;
 					}
@@ -641,11 +578,11 @@ int get_filename_by_index(char *filename, int index, char only_images, int buffe
 		}
 	closedir(d);
 	}
-	return FALSE;
+	return false;
 }
 
 int get_max_nr_of_img(struct Content * content, int nr_of_content){
-	printf("get_max_nr_of_img: ");
+	//printf("get_max_nr_of_img: ");
 	int max_nr_of_img = 0;
 	for(int i=0; i<nr_of_content; i++){
 		//printf("%d: ", i);
@@ -660,7 +597,7 @@ int get_max_nr_of_img(struct Content * content, int nr_of_content){
 		}
 		content++;//stegar upp pekaren		
 	}
-	printf("%d\n", max_nr_of_img);
+	//printf("%d\n", max_nr_of_img);
 	return max_nr_of_img;
 }
 
@@ -710,7 +647,7 @@ int copy_file_linux(char * filename, char * destination_folder, char keep_origin
 	
 	//build a linux command
 	if(keep_originals==0){
-		printf("Not keep originals\n");
+		printf("Not keeping originals\n");
 		strncpy(syscall, "mv ", 3);
 		strcat(syscall, filename);
 		strcat(syscall, " ");
@@ -733,9 +670,7 @@ int copy_file_linux(char * filename, char * destination_folder, char keep_origin
 		strcat(syscall, filename);
 		strcat(syscall, " "); //inte '/'
 		strcat(syscall, destination_folder);
-		//strcat(syscall, "/");
-		//strcat(syscall, filename);
-		printf("Ska köra %s\n\n", syscall);
+		//printf("Ska köra %s\n\n", syscall);
 		if(system(syscall)==-1){
 			printf("System call failed\n");
 		}
@@ -761,7 +696,6 @@ int move_used_images(struct Content * content, int number_of_content, char * des
 	}
 	
 	for(int i=0; i<number_of_content; i++){
-		//printf("%d: ", i);
 		if((*content).type == SELL_ITEM){
 			//printf("SELL_ITEM\n");
 			if((*content).c_item.s_item.nr_of_img > 0){
@@ -770,8 +704,6 @@ int move_used_images(struct Content * content, int number_of_content, char * des
 					memset(temp_name, 0, 100);//clear to zero
 					//bläddrar igenom bildnamn
 					strncpy(temp_name, (*content).c_item.s_item.image_files[j], strlen((*content).c_item.s_item.image_files[j]));
-					//strcat(temp_name, "\0");//behövs detta?
-					//printf("Har namn '%s'\n", temp_name);
 					
 					copy_file_linux(temp_name, destination_folder, keep_originals);//linux
 				}
@@ -785,21 +717,6 @@ int move_used_images(struct Content * content, int number_of_content, char * des
 	return 1;
 }
 
-
-
-//tar string ref
-/*
-void set_string_name_array(char * name, char * new_name){
-	if(new_name == NULL){
-		time_t t = time(NULL);
-		struct tm tm = *localtime(&t);
-
-		sprintf(name, "project_%d_%d_%d_%d_%d_%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-	}
-	else{
-		strncpy(name, new_name, strlen(new_name));
-	}
-}*/ //bortkommenterad 3 apr -18
 
 void save_html_file(struct Content * content, int nr_of_content, char * project_name){
 	printf("save_html_file %d, %s, %ld\n", nr_of_content, project_name, strlen(project_name));
@@ -1063,7 +980,6 @@ char* dialogue_enter_text(int max_len){
 		printf("dialogue_enter_text arg: %d\n", max_len);
 	}
 	
-	
 	int count=0;
 	char * text = malloc(max_len);
 	char c;
@@ -1118,7 +1034,6 @@ void edit_view(struct Content * content, int nr_of_content){
 		printf("1: move item upwards, 2: move item downwards, 0: exit view ");
 		
 		if (scanf("%d", &choice) == 0) {
-			//fel med inläsning?
 			printf("Err. . .\n");
 			do {
 				c = getchar();
@@ -1139,10 +1054,8 @@ void edit_view(struct Content * content, int nr_of_content){
 				}
 				while (!isdigit(c));
 				ungetc(c, stdin);
-				//consume non-numeric chars from buffer
 			}
 			if(item_to_move > 0 && item_to_move < nr_of_content){
-				//*content är stegad
 				//kan stegas tillbaka?
 				steps = nr_of_content - item_to_move;
 				//printf("Steps = %d\n", steps);
@@ -1187,16 +1100,13 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 	printf("open_items_file\n");
 	//öppna filen filename
 	//Skriver över öppen data
-	//TODO: byt ut v-namn temp till temp_content_item
 	FILE *fp = fopen(filename, "r");
 	char * line = NULL;
-	//char * line_pointer = NULL;//ska peka på line
-	//char c;
+
     size_t len = 0;
     ssize_t read;
     int counter=0;
     struct Content temp_content_item2;//testar med read_1_item
-    //char temp_txt[100];
 	
 	if(fp==NULL){
 		printf("Fel vid fopen\n");
@@ -1207,8 +1117,6 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 		printf("Retrieved line of length %zu :\n", read);
 		printf("%s", line);
 		
-		//line_pointer = line;
-		//printf("line_pointer har tilldelats: %s\n", line_pointer);
 		//Kolla att raden inleds med vissa tecken
 		//TODO: ersätt med 'general expression'
 		////kolla om det är S-I först eller P-I (eller ev. annat) samt ':' på index 3
@@ -1229,10 +1137,6 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 					printf("Senast inladdade content i content-array (plats %d):\n", (*number_of_content)-1);
 					print_1_content((*content)[(*number_of_content)-1]);
 
-					//free_1_item(&temp_content_item2);
-					//temp_content_item2.type=0;
-					
-					//printf("number_of_content (%d) ska ökas ett steg\n", *number_of_content);
 
 				}//slut if line[2]=='I'
 				else{
