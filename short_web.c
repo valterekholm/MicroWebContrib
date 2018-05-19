@@ -665,7 +665,7 @@ int copy_file_linux(char * filename, char * destination_folder, char keep_origin
 	else if(keep_originals==1){
 		//-p 	Same as --preserve=mode,ownership,timestamps.
 		// cp origfile /directory/subdirectory
-		printf("Keep originals 1\n");
+//		printf("Keep originals 1\n");
 		strncpy(syscall, "cp ", 3);
 		strcat(syscall, filename);
 		strcat(syscall, " "); //inte '/'
@@ -1131,8 +1131,6 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
 					
 					
 					(*content)[(*number_of_content)-1] = import_1_content(line);
-					printf("C\n");
-					
 					
 					printf("Senast inladdade content i content-array (plats %d):\n", (*number_of_content)-1);
 					print_1_content((*content)[(*number_of_content)-1]);
