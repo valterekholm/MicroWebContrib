@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <sys/stat.h>//for mkdir
 
-#include "../a_v_e_string_f.h" //TODO: använd get_string_with_char_replaced för make_directory_linux (mkdir)
+#include "../a_v_e_string_f.h"
 
 //compile with gcc -o short_v short_v.c ../a_v_e_string_f.c
 
@@ -81,7 +81,8 @@ int main (void)
 	char c;
 	//char input_buffer_100[100];
 	struct Content * content;
-	//struct Content ** test_c;//for swapping pointer
+	struct Content ** test_c;//for swapping pointer
+	struct Content ** test_c2;//for swapping pointer
 	struct Content temp_content;
 	
 	int content_count=0;
@@ -197,8 +198,34 @@ int main (void)
 			}
 			break;
 			case 6:
-
+			//Copy the "content" array to a array with one more pointer-level...
+			
+			printf("Ska allokera %ld", sizeof(struct Content**));
+			test_c = (struct Content**)malloc(sizeof(struct Content*));//"1 rows"
+			*test_c = (struct Content*)malloc(sizeof(struct Content) * 2);//"2 col"
+			
+			test_c2 = (struct Content**)malloc(sizeof(struct Content*));//"1 rows"
+			*test_c2 = (struct Content*)malloc(sizeof(struct Content) * 2);//"2 col"
+			
+			if(content->type == SELL_ITEM){
+			}
+			
+			test_c[0][0] = content[0];
+			test_c2[0][0] = content[1];
+			
+			print_1_content(test_c[0][0]);
+			print_1_content(test_c2[0][0]);
+			
+			swap_content(test_c, test_c2);
+			
+			print_1_content(test_c[0][0]);
+			print_1_content(test_c2[0][0]);
+			
 			edit_view(content, content_count);
+			
+			
+			free(test_c[0]);
+			free(test_c);
 			break;
 			case 7://open
 			print_dir_files(0);
@@ -233,11 +260,11 @@ int main (void)
 		for(int i=0;i<content_count;i++){
 			printf("I content nummer %d\n", i);
 			if(content[i].type==SELL_ITEM){
-				printf("%i är typ 1\n", i);
+				//printf("%i är typ 1\n", i);
 				if(content[i].c_item.s_item.nr_of_img>0){
 					printf("Har bilder\n");
 					for(int j=0;j<content[i].c_item.s_item.nr_of_img;j++){
-						printf("Ska fria bild nr %d\n", j);
+						//printf("Ska fria bild nr %d\n", j);
 						free(content[i].c_item.s_item.image_files[j]);
 						//printf("Friade en img minne\n");
 					}
@@ -245,7 +272,7 @@ int main (void)
 				}
 			}
 			else if(content[i].type==PARAGRAPH_ITEM){
-				printf("%i är typ 2\n", i);
+				//printf("%i är typ 2\n", i);
 				free(content[i].c_item.p_item.text);
 			}
 		}
