@@ -82,21 +82,21 @@ int main (void)
 	//char input_buffer_100[100];
 	struct Content * content;
 	struct Content ** test_c;//for swapping pointer
-	struct Content ** test_c2;//for swapping pointer
+	//struct Content ** test_c2;//for swapping pointer
 	struct Content temp_content;
 	
 	int content_count=0;
 		
-	char * project_name;
+	char * project_name = NULL;
 	const int max_project_length = 50;
 	
-	char * open_file_name;
+	char * open_file_name = NULL;
 	const int max_filename_length = 70;
 	
 	
-	temp_content.type=2;
-	temp_content.c_item.p_item.text=malloc(4);
-	strncpy(temp_content.c_item.p_item.text, "Hej", 3);
+	//temp_content.type=2;
+	//temp_content.c_item.p_item.text=malloc(4);
+	//strncpy(temp_content.c_item.p_item.text, "Hej", 3);
 	
 	//*test_c = &temp_content;
 	
@@ -204,9 +204,6 @@ int main (void)
 			test_c = (struct Content**)malloc(sizeof(struct Content*) * 2);//"rows"
 			*test_c = (struct Content*)malloc(sizeof(struct Content));//"cols"
 			
-			//test_c2 = (struct Content**)malloc(sizeof(struct Content*));//"rows"
-			//*test_c2 = (struct Content*)malloc(sizeof(struct Content));//"cols"
-			
 			if(content->type == SELL_ITEM){
 			}
 			
@@ -223,11 +220,7 @@ int main (void)
 			
 			edit_view(content, content_count);
 			
-			
-			//free(test_c[0]);
 			free(test_c);
-			//free(test_c2[0]);
-			//free(test_c2);
 			break;
 			case 7://open
 			print_dir_files(0);
@@ -281,12 +274,12 @@ int main (void)
 		free(content);
 		content_count=0;
 		
-		if(project_name != NULL){
-			free(project_name);
-		}
-		if(open_file_name != NULL){
-			free(open_file_name);
-		}
+	}
+	if(project_name != NULL){
+		free(project_name);
+	}
+	if(open_file_name != NULL){
+		free(open_file_name);
 	}
 	return 0;
 }
@@ -351,7 +344,7 @@ void print_1_content(struct Content content){
 		printf("Title: %s\n", content.c_item.s_item.title);
 		printf("Beskrivning: %s\n", content.c_item.s_item.description);
 		printf("Pris: %d\n", content.c_item.s_item.price);
-		printf("Antal bilder angivet till %d\n", content.c_item.s_item.nr_of_img);
+		//printf("Antal bilder angivet till %d\n", content.c_item.s_item.nr_of_img);
 		if(content.c_item.s_item.nr_of_img>0){
 			printf("Bildfiler: ");
 			for(int i=0; i<content.c_item.s_item.nr_of_img; i++){
@@ -363,7 +356,7 @@ void print_1_content(struct Content content){
 			}
 		}
 		else{
-			printf("0 bilder angivet...\n");
+			printf("Inga bilder angivet...\n");
 		}
 		break;
 		case 2:
