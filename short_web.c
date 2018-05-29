@@ -200,32 +200,34 @@ int main (void)
 			case 6:
 			//Copy the "content" array to a array with one more pointer-level...
 			
-			printf("Ska allokera %ld", sizeof(struct Content**));
-			test_c = (struct Content**)malloc(sizeof(struct Content*));//"1 rows"
-			*test_c = (struct Content*)malloc(sizeof(struct Content) * 2);//"2 col"
+			printf("Ska allokera %ld\n", sizeof(struct Content**));
+			test_c = (struct Content**)malloc(sizeof(struct Content*) * 2);//"rows"
+			*test_c = (struct Content*)malloc(sizeof(struct Content));//"cols"
 			
-			test_c2 = (struct Content**)malloc(sizeof(struct Content*));//"1 rows"
-			*test_c2 = (struct Content*)malloc(sizeof(struct Content) * 2);//"2 col"
+			//test_c2 = (struct Content**)malloc(sizeof(struct Content*));//"rows"
+			//*test_c2 = (struct Content*)malloc(sizeof(struct Content));//"cols"
 			
 			if(content->type == SELL_ITEM){
 			}
 			
-			test_c[0][0] = content[0];
-			test_c2[0][0] = content[1];
+			test_c[0] = &content[0];
+			test_c[1] = &content[1];
 			
 			print_1_content(test_c[0][0]);
-			print_1_content(test_c2[0][0]);
+			print_1_content(test_c[1][0]);
 			
-			swap_content(test_c, test_c2);
+			swap_content(&(test_c[0]), &(test_c[1]));
 			
 			print_1_content(test_c[0][0]);
-			print_1_content(test_c2[0][0]);
+			print_1_content(test_c[1][0]);
 			
 			edit_view(content, content_count);
 			
 			
-			free(test_c[0]);
+			//free(test_c[0]);
 			free(test_c);
+			//free(test_c2[0]);
+			//free(test_c2);
 			break;
 			case 7://open
 			print_dir_files(0);
@@ -1133,7 +1135,7 @@ int open_items_file(struct Content ** content, int * number_of_content, char * f
     size_t len = 0;
     ssize_t read;
     int counter=0;
-    struct Content temp_content_item2;//testar med read_1_item
+    //struct Content temp_content_item2;//testar med read_1_item
 	
 	if(fp==NULL){
 		printf("Fel vid fopen\n");
@@ -1229,7 +1231,6 @@ void clear_1_item(struct Content * item){
  * Parses a line that represent an sell- or p-item
  * Returns a struct Content
  * */
-//TODO: fixa fel med datan som returneras, bildfilen kommer inte med vid tillfälle
 struct Content import_1_content(char * text_line){
 	struct Content temp_content_item;
 	printf("import_1_content\n");
@@ -1249,7 +1250,7 @@ struct Content import_1_content(char * text_line){
 		printf("temp_content_item.type = %d\n", temp_content_item.type);
 		//title|description|price(|image_name1;img2;img3)
 		int i=0;
-		int title_length=0;
+		//int title_length=0;
 		int descr_length=0;
 		//printf("descr_length=%d\n",descr_length);
 		char * temp_text;//mellanlagring av inlästa text-bitar
